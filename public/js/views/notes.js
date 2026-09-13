@@ -99,6 +99,7 @@ export default async function render(root, ctx) {
 
   function noteEl(note) {
     const title = h('input', {
+      dir: 'auto',
       value: note.title,
       placeholder: 'Title',
       'aria-label': 'Note title',
@@ -109,6 +110,7 @@ export default async function render(root, ctx) {
     });
 
     const body = h('textarea.note-body', {
+      dir: 'auto',
       placeholder: 'Write something…',
       'aria-label': 'Note text',
       spellcheck: 'true',

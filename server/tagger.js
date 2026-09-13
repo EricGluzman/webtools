@@ -6,28 +6,70 @@
  */
 
 const TAG_RULES = [
-  { tag: 'Hardware', color: 'amber', words: ['hardware', 'screws', 'drill', 'lumber', 'timber', 'paint', 'toolbox', 'home depot', 'lowes', 'ace hardware', 'bauhaus', 'obi', 'leroy merlin', 'plumbing', 'sandpaper', 'nails', 'hammer'] },
-  { tag: 'Food', color: 'lime', words: ['grocery', 'groceries', 'supermarket', 'restaurant', 'cafe', 'coffee', 'bakery', 'pizza', 'burger', 'milk', 'bread', 'produce', 'deli', 'lidl', 'aldi', 'tesco', 'rewe', 'kaufland', 'carrefour', 'walmart', 'whole foods', 'trader joe', 'starbucks', 'mcdonald'] },
-  { tag: 'Exams', color: 'violet', words: ['exam', 'examination', 'quiz', 'midterm', 'final grade', 'transcript', 'semester', 'syllabus', 'homework', 'assignment', 'gpa', 'diploma', 'certificate of completion', 'university', 'faculty', 'student id', 'course code'] },
-  { tag: 'School', color: 'violet', words: ['school', 'teacher', 'parent', 'classroom', 'tuition', 'enrolment', 'enrollment', 'academic year', 'report card', 'timetable'] },
-  { tag: 'Medical', color: 'rose', words: ['clinic', 'patient', 'prescription', 'pharmacy', 'diagnosis', 'dental', 'dentist', 'doctor', 'physician', 'lab result', 'blood test', 'vaccination', 'medical'] },
-  { tag: 'Utilities', color: 'cyan', words: ['electricity', 'kwh', 'water bill', 'gas bill', 'utility', 'broadband', 'internet service', 'meter reading', 'energy', 'sewage'] },
-  { tag: 'Transport', color: 'sky', words: ['uber', 'lyft', 'taxi', 'fuel', 'petrol', 'gasoline', 'diesel', 'parking', 'toll', 'train ticket', 'railway', 'metro', 'bus ticket', 'car wash', 'tire', 'garage'] },
-  { tag: 'Travel', color: 'sky', words: ['hotel', 'check-in', 'check out', 'reservation', 'booking', 'flight', 'airline', 'boarding pass', 'itinerary', 'airbnb', 'baggage', 'departure'] },
+  { tag: 'Hardware', color: 'amber', words: ['hardware', 'screws', 'drill', 'lumber', 'timber', 'paint', 'toolbox', 'home depot', 'lowes', 'ace hardware', 'bauhaus', 'obi', 'leroy merlin', 'plumbing', 'sandpaper', 'nails', 'hammer',
+    'строительн', 'инструмент', 'шурупы', 'саморезы', 'краска', 'гвозди', 'леруа',
+    'חומרי בניין', 'ברגים', 'כלי עבודה', 'צבע', 'מסמרים', 'אייס'] },
+  { tag: 'Food', color: 'lime', words: ['grocery', 'groceries', 'supermarket', 'restaurant', 'cafe', 'coffee', 'bakery', 'pizza', 'burger', 'milk', 'bread', 'produce', 'deli', 'lidl', 'aldi', 'tesco', 'rewe', 'kaufland', 'carrefour', 'walmart', 'whole foods', 'trader joe', 'starbucks', 'mcdonald',
+    'продукты', 'супермаркет', 'магазин', 'хлеб', 'молоко', 'сыр', 'мясо', 'овощи', 'пятёрочка', 'пятерочка', 'магнит', 'перекрёсток', 'перекресток', 'ашан', 'дикси', 'кафе', 'ресторан', 'пекарня', 'кофе',
+    'סופרמרקט', 'שופרסל', 'רמי לוי', 'ויקטורי', 'מכולת', 'מזון', 'לחם', 'חלב', 'גבינה', 'ירקות', 'מסעדה', 'בית קפה', 'מאפייה'] },
+  { tag: 'Exams', color: 'violet', words: ['exam', 'examination', 'quiz', 'midterm', 'final grade', 'transcript', 'semester', 'syllabus', 'homework', 'assignment', 'gpa', 'diploma', 'certificate of completion', 'university', 'faculty', 'student id', 'course code',
+    'экзамен', 'зачёт', 'зачет', 'сессия', 'семестр', 'зачётка', 'студент', 'университет', 'оценка',
+    'בחינה', 'מבחן', 'ציון', 'סמסטר', 'אוניברסיטה', 'תעודה', 'סטודנט'] },
+  { tag: 'School', color: 'violet', words: ['school', 'teacher', 'parent', 'classroom', 'tuition', 'enrolment', 'enrollment', 'academic year', 'report card', 'timetable',
+    'школа', 'учитель', 'класс', 'дневник', 'учебный год', 'родительское',
+    'בית ספר', 'מורה', 'כיתה', 'שנת הלימודים', 'הורים', 'גן ילדים'] },
+  { tag: 'Medical', color: 'rose', words: ['clinic', 'patient', 'prescription', 'pharmacy', 'diagnosis', 'dental', 'dentist', 'doctor', 'physician', 'lab result', 'blood test', 'vaccination', 'medical',
+    'аптека', 'клиника', 'поликлиника', 'врач', 'рецепт', 'анализы', 'стоматолог', 'больница',
+    'קופת חולים', 'מרפאה', 'בית מרקחת', 'רופא', 'מרשם', 'בדיקות דם', 'שיניים', 'בית חולים'] },
+  { tag: 'Utilities', color: 'cyan', words: ['electricity', 'kwh', 'water bill', 'gas bill', 'utility', 'broadband', 'internet service', 'meter reading', 'energy', 'sewage',
+    'электроэнерг', 'жкх', 'коммунальн', 'квитанция', 'водоснабжение', 'газоснабжение', 'показания счётчика',
+    'חשמל', 'מים', 'ארנונה', 'גז', 'קריאת מונה', 'חשבון חשמל'] },
+  { tag: 'Transport', color: 'sky', words: ['uber', 'lyft', 'taxi', 'fuel', 'petrol', 'gasoline', 'diesel', 'parking', 'toll', 'train ticket', 'railway', 'metro', 'bus ticket', 'car wash', 'tire', 'garage',
+    'такси', 'бензин', 'заправка', 'азс', 'проезд', 'метро', 'парковка', 'шиномонтаж', 'ржд',
+    'מונית', 'דלק', 'תחנת דלק', 'חניה', 'רכבת', 'אוטובוס', 'רב קו', 'כביש 6'] },
+  { tag: 'Travel', color: 'sky', words: ['hotel', 'check-in', 'check out', 'reservation', 'booking', 'flight', 'airline', 'boarding pass', 'itinerary', 'airbnb', 'baggage', 'departure',
+    'гостиница', 'отель', 'бронирование', 'авиабилет', 'посадочный талон', 'рейс',
+    'מלון', 'הזמנה', 'טיסה', 'כרטיס עלייה למטוס', 'נמל תעופה'] },
   { tag: 'Electronics', color: 'blue', words: ['laptop', 'monitor', 'ssd', 'nvme', 'gpu', 'cpu', 'motherboard', 'keyboard', 'mouse', 'headphones', 'smartphone', 'charger', 'newegg', 'best buy', 'ram module'] },
   { tag: 'Software', color: 'indigo', words: ['subscription', 'license key', 'saas', 'renewal', 'monthly plan', 'annual plan', 'github', 'jetbrains', 'adobe', 'microsoft 365', 'netflix', 'spotify', 'domain registration', 'hosting', 'cloud credits'] },
-  { tag: 'Finance', color: 'emerald', words: ['bank statement', 'iban', 'swift', 'account balance', 'interest rate', 'loan', 'mortgage', 'transfer', 'credit card statement', 'overdraft'] },
-  { tag: 'Taxes', color: 'orange', words: ['tax return', 'income tax', 'vat return', 'irs', 'hmrc', 'w-2', '1099', 'tax year', 'deduction', 'taxable'] },
-  { tag: 'Insurance', color: 'teal', words: ['insurance', 'policy number', 'premium', 'coverage', 'insured', 'claim number', 'deductible'] },
-  { tag: 'Housing', color: 'amber', words: ['lease', 'rent', 'landlord', 'tenant', 'tenancy', 'security deposit', 'apartment', 'property management'] },
+  { tag: 'Finance', color: 'emerald', words: ['bank statement', 'iban', 'swift', 'account balance', 'interest rate', 'loan', 'mortgage', 'transfer', 'credit card statement', 'overdraft',
+    'банк', 'выписка', 'расчётный счёт', 'перевод', 'кредит', 'ипотека', 'остаток',
+    'בנק', 'תדפיס', 'העברה', 'הלוואה', 'משכנתא', 'יתרה', 'עובר ושב'] },
+  { tag: 'Taxes', color: 'orange', words: ['tax return', 'income tax', 'vat return', 'irs', 'hmrc', 'w-2', '1099', 'tax year', 'deduction', 'taxable',
+    'налог', 'ндфл', 'налоговая', 'декларация', 'фнс',
+    'מס הכנסה', 'דוח שנתי', 'רשות המסים', 'ניכוי מס'] },
+  { tag: 'Insurance', color: 'teal', words: ['insurance', 'policy number', 'premium', 'coverage', 'insured', 'claim number', 'deductible',
+    'страхован', 'полис', 'осаго', 'каско', 'страховая',
+    'ביטוח', 'פוליסה', 'תביעה', 'מבוטח'] },
+  { tag: 'Housing', color: 'amber', words: ['lease', 'rent', 'landlord', 'tenant', 'tenancy', 'security deposit', 'apartment', 'property management',
+    'аренда', 'квартира', 'наймодатель', 'арендатор', 'залог', 'договор найма',
+    'שכירות', 'דירה', 'שוכר', 'משכיר', 'ועד בית', 'פיקדון'] },
   { tag: 'Warranty', color: 'yellow', words: ['warranty', 'guarantee', 'user manual', 'serial number', 'rma', 'return policy'] },
   { tag: 'Legal', color: 'slate', words: ['agreement', 'contract', 'hereby', 'signature', 'notary', 'terms and conditions', 'party of the first', 'jurisdiction'] },
-  { tag: 'Identity', color: 'slate', words: ['passport', 'id card', 'driver license', 'driving licence', 'date of birth', 'nationality', 'social security'] },
-  { tag: 'Work', color: 'pink', words: ['payslip', 'salary', 'employer', 'employee id', 'timesheet', 'net pay', 'gross pay', 'employment contract'] },
+  { tag: 'Identity', color: 'slate', words: ['passport', 'id card', 'driver license', 'driving licence', 'date of birth', 'nationality', 'social security',
+    'паспорт', 'водительское удостоверение', 'снилс', 'дата рождения', 'гражданство',
+    'תעודת זהות', 'דרכון', 'רישיון נהיגה', 'תאריך לידה'] },
+  { tag: 'Work', color: 'pink', words: ['payslip', 'salary', 'employer', 'employee id', 'timesheet', 'net pay', 'gross pay', 'employment contract',
+    'зарплата', 'расчётный листок', 'работодатель', 'табель', 'оклад',
+    'תלוש שכר', 'משכורת', 'מעסיק', 'שכר ברוטו', 'שכר נטו'] },
 ];
 
-const RECEIPT_WORDS = ['subtotal', 'total', 'cash', 'change due', 'receipt', 'vat', 'tax', 'card ending', 'thank you for your', 'qty', 'item total', 'amount paid'];
-const INVOICE_WORDS = ['invoice', 'invoice no', 'bill to', 'due date', 'payment terms', 'purchase order', 'remit to'];
+const RECEIPT_WORDS = [
+  'subtotal', 'total', 'cash', 'change due', 'receipt', 'vat', 'tax', 'card ending',
+  'thank you for your', 'qty', 'item total', 'amount paid',
+  // Russian
+  'итого', 'сумма', 'касса', 'кассир', 'чек', 'ндс', 'сдача', 'наличные', 'спасибо за покупку', 'товар', 'руб',
+  // Hebrew
+  'סה"כ', 'סהכ', 'סך הכל', 'קבלה', 'מע"מ', 'מעמ', 'לתשלום', 'מזומן', 'אשראי', 'תודה', 'קופה', 'ש"ח',
+];
+
+const INVOICE_WORDS = [
+  'invoice', 'invoice no', 'bill to', 'due date', 'payment terms', 'purchase order', 'remit to',
+  // Russian
+  'счёт', 'счет на оплату', 'счёт-фактура', 'счет-фактура', 'к оплате', 'плательщик', 'поставщик', 'срок оплаты',
+  // Hebrew
+  'חשבונית', 'חשבונית מס', 'לכבוד', 'תנאי תשלום', 'מספר חשבונית', 'תאריך פירעון',
+];
 
 const CURRENCIES = [
   { symbol: '$', code: 'USD' },
@@ -39,13 +81,31 @@ const CURRENCIES = [
   { symbol: '₹', code: 'INR' },
   { symbol: 'CHF', code: 'CHF' },
   { symbol: 'PLN', code: 'PLN' },
+  { symbol: '₽', code: 'RUB' },
+  { symbol: 'руб', code: 'RUB' },
+  { symbol: 'грн', code: 'UAH' },
+  { symbol: 'ש"ח', code: 'ILS' },
+  { symbol: 'שח', code: 'ILS' },
 ];
 
-const TOTAL_HINTS = ['grand total', 'total due', 'amount due', 'total amount', 'balance due', 'total paid', 'total', 'sum', 'summe', 'gesamt', 'montant', 'итого', 'всього', 'сума'];
+const TOTAL_HINTS = [
+  'grand total', 'total due', 'amount due', 'total amount', 'balance due', 'total paid', 'total',
+  'sum', 'summe', 'gesamt', 'montant',
+  // Russian / Ukrainian
+  'итого', 'итог', 'всего к оплате', 'к оплате', 'общая сумма', 'сумма', 'всього', 'сума',
+  // Hebrew
+  'סה"כ לתשלום', 'סהכ לתשלום', 'סך הכל', 'סה"כ', 'סהכ', 'לתשלום', 'סכום לתשלום',
+];
 
 const MONTHS = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
   jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+
+// Russian dates are usually written "14 марта 2024" in the genitive.
+const RU_MONTHS = {
+  янв: 1, фев: 2, мар: 3, апр: 4, мая: 5, май: 5, июн: 6,
+  июл: 7, авг: 8, сен: 9, окт: 10, ноя: 11, дек: 12,
 };
 
 function pad(n) {
@@ -88,6 +148,12 @@ function findDate(text, dayFirst = true) {
   const namedFirst = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?[\s,]+(\d{4})\b/gi;
   while ((match = namedFirst.exec(text))) {
     const iso = isoDate(parseInt(match[3], 10), MONTHS[match[1].toLowerCase()], parseInt(match[2], 10));
+    if (iso) candidates.push({ iso, score: 2, at: match.index });
+  }
+
+  const russian = /\b(\d{1,2})\s+(янв|фев|мар|апр|мая|май|июн|июл|авг|сен|окт|ноя|дек)[а-я.]*\s+(\d{4})/gi;
+  while ((match = russian.exec(text))) {
+    const iso = isoDate(parseInt(match[3], 10), RU_MONTHS[match[2].toLowerCase()], parseInt(match[1], 10));
     if (iso) candidates.push({ iso, score: 2, at: match.index });
   }
 
@@ -157,7 +223,10 @@ function findVendor(text) {
     const clean = line.replace(/[^\p{L}\p{N}&'. -]/gu, '').trim();
     if (clean.length < 3 || clean.length > 42) continue;
     if (!/\p{L}{2}/u.test(clean)) continue;
+    // Header words are not the shop's name, in any of the languages we read.
     if (/^(invoice|receipt|tax invoice|order|date|tel|phone|www\.|http|thank)/i.test(clean)) continue;
+    if (/^(чек|кассовый|счёт|счет|дата|телефон|итого|ндс|адрес|кассир|спасибо)/i.test(clean)) continue;
+    if (/^(קבלה|חשבונית|תאריך|טלפון|סה|סך|תודה|כתובת|מעמ)/.test(clean)) continue;
     const letters = clean.replace(/[^\p{L}]/gu, '');
     if (!letters) continue;
     const upperRatio = (clean.match(/\p{Lu}/gu) || []).length / letters.length;

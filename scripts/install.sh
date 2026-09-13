@@ -27,12 +27,14 @@ apt-get update -qq
 # tesseract reads the scans, poppler handles PDFs, the rest is build tooling
 # for better-sqlite3 in case no prebuilt binary matches this machine.
 apt-get install -y -qq \
-  tesseract-ocr poppler-utils \
+  tesseract-ocr tesseract-ocr-rus tesseract-ocr-heb poppler-utils \
   build-essential python3 ca-certificates curl rsync
 
-say "Extra OCR languages (optional)"
+say "OCR languages"
 echo "    Installed: $(tesseract --list-langs 2>/dev/null | tail -n +2 | tr '\n' ' ')"
-echo "    Add more with, for example:  sudo apt-get install tesseract-ocr-deu tesseract-ocr-ukr"
+echo "    English, Russian and Hebrew are read out of the box."
+echo "    Add more with, for example:  sudo apt-get install tesseract-ocr-ukr tesseract-ocr-deu"
+echo "    then list them in OCR_LANGS in $APP_DIR/.env"
 
 if ! command -v node >/dev/null 2>&1 || [[ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]]; then
   say "Installing Node.js 22"
@@ -46,12 +48,25 @@ if ! id "$APP_USER" >/dev/null 2>&1; then
   useradd --system --create-home --home-dir "$APP_DIR" --shell /usr/sbin/nologin "$APP_USER"
 fi
 
+UPDATING=0
+if [[ -f "$APP_DIR/data/webtools.db" ]]; then
+  UPDATING=1
+  say "Updating an existing install — backing the data up first"
+  if [[ -x "$APP_DIR/scripts/backup.sh" ]]; then
+    "$APP_DIR/scripts/backup.sh" "$APP_DIR/backups" || warn "Backup failed; continuing anyway."
+  fi
+fi
+
 say "Copying the app to $APP_DIR"
 mkdir -p "$APP_DIR"
 rsync -a --delete \
   --exclude node_modules --exclude data --exclude .git --exclude .env \
   "$SOURCE_DIR"/ "$APP_DIR"/
 mkdir -p "$APP_DIR/data"
+
+# Ownership has to be right before npm runs: it installs as $APP_USER and
+# would otherwise fail to write node_modules into a root-owned directory.
+chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
 
 say "Installing dependencies"
 cd "$APP_DIR"
@@ -78,7 +93,7 @@ $CREDENTIAL_LINE
 DATA_DIR=./data
 MAX_UPLOAD_MB=40
 TRUST_PROXY=1
-OCR_LANGS=eng
+OCR_LANGS=eng+rus+heb
 ENV
   chmod 600 "$APP_DIR/.env"
 elif [[ -n "$PIN" ]]; then
@@ -88,12 +103,15 @@ elif [[ -n "$PIN" ]]; then
   CHOSEN_PIN="$PIN"
 fi
 
-chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
+chown "$APP_USER":"$APP_USER" "$APP_DIR/.env"
 
 say "Installing the systemd service"
 install -m 644 "$APP_DIR/scripts/workbench.service" /etc/systemd/system/workbench.service
 systemctl daemon-reload
-systemctl enable --now workbench
+systemctl enable workbench
+# restart rather than "enable --now": a running service would otherwise keep
+# serving the old code after an update.
+systemctl restart workbench
 sleep 2
 systemctl is-active --quiet workbench || { journalctl -u workbench -n 30 --no-pager; die "The service did not start."; }
 echo "    service is running on 127.0.0.1:8712"
@@ -116,7 +134,11 @@ else
   warn "Re-run as: sudo ./scripts/install.sh your.subdomain.com"
 fi
 
-say "Done"
+if [[ "$UPDATING" == "1" ]]; then
+  say "Updated — done"
+else
+  say "Installed — done"
+fi
 if [[ -n "${GENERATED_PASSWORD:-}" ]]; then
   printf '\n    Your login password is:  \033[1;32m%s\033[0m\n' "$GENERATED_PASSWORD"
   printf '    It is stored in %s\n\n' "$APP_DIR/.env"

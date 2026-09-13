@@ -118,8 +118,8 @@ export default async function render(root) {
               class: `tone-${note.color}`,
               style: { padding: '11px 14px', display: 'grid', gap: '2px', borderLeft: '3px solid var(--tone)' },
             },
-              h('strong', { style: { fontSize: '13.4px' } }, note.title || 'Untitled note'),
-              h('span.small.muted.truncate', note.body.split('\n')[0] || 'Empty'),
+              h('strong', { dir: 'auto', style: { fontSize: '13.4px' } }, note.title || 'Untitled note'),
+              h('span.small.muted.truncate', { dir: 'auto' }, note.body.split('\n')[0] || 'Empty'),
               h('span.tiny.dim', relativeTime(note.updated_at))
             ))
         : h('div.card', { style: { padding: '18px', textAlign: 'center' } },
@@ -135,7 +135,7 @@ export default async function render(root) {
                 ? h('img', { src: `/api/docs/${doc.id}/thumb`, alt: '', loading: 'lazy' })
                 : icon('file', { size: 17 })),
               h('span.rmeta',
-                h('strong.truncate', doc.title || doc.filename),
+                h('strong.truncate', { dir: 'auto' }, doc.title || doc.filename),
                 h('span.line2',
                   doc.doc_date ? h('span', doc.doc_date) : h('span', relativeTime(doc.created_at)),
                   ...doc.tags.slice(0, 2).map((tag) => h('span.chip', { class: `tone-${tag.color}` }, tag.name)))),

@@ -292,10 +292,14 @@ async function refreshStatus() {
   try {
     const health = await api('/api/health');
     const ocrReady = health.ocr.tesseract;
+    const langs = (health.ocr.langs || []).join(' · ');
     setStatus([
       h('div.status-line',
         h('span.status-dot', { class: ocrReady ? '' : 'warn' }),
-        h('span', ocrReady ? 'OCR ready' : 'OCR not installed')
+        h('span', { title: health.ocr.missingLangs?.length
+          ? `Not installed: ${health.ocr.missingLangs.join(', ')}`
+          : '' },
+          ocrReady ? `OCR ready${langs ? ` · ${langs}` : ''}` : 'OCR not installed')
       ),
       h('div.status-line', { style: { opacity: '.8' } },
         h('span', { style: { marginLeft: '13px' } }, `v${health.version} · local only`)

@@ -55,7 +55,10 @@ reads out what it can:
   Insurance, Housing, Warranty, Legal, Identity, Work, plus Receipt/Invoice
 
 Everything is editable afterwards, every word of the extracted text is
-full-text searchable, and the whole pile exports to CSV for bookkeeping.
+full-text searchable — in English, Russian and Hebrew — and the whole pile
+exports to CSV for bookkeeping. Search falls back to a plain substring scan
+when the index finds nothing, which is what makes prefixed Hebrew words and
+Russian case endings still turn up.
 
 **Clearing things out.** Hover any card or row and a checkbox appears in the
 corner. Tick one and the view switches to picking mode: a plain click then
@@ -151,15 +154,41 @@ service after changing anything: `sudo systemctl restart workbench`.
 | `TRUST_PROXY` | `1` | Marks the session cookie Secure and honours `X-Forwarded-*` |
 | `OCR_LANGS` | `eng` | Tesseract languages, e.g. `eng+deu+ukr` |
 
-### More OCR languages
+### Languages
+
+English, **Russian** and **Hebrew** are read out of the box — the install
+script pulls in `tesseract-ocr-rus` and `tesseract-ocr-heb`, and `OCR_LANGS`
+defaults to `eng+rus+heb`. Hebrew text is displayed right-to-left everywhere it
+appears: the extracted text, the title and vendor fields, card titles and your
+own notes.
+
+On a server installed before this was added:
 
 ```bash
-sudo apt install tesseract-ocr-deu tesseract-ocr-ukr tesseract-ocr-heb
-sudo sed -i 's/^OCR_LANGS=.*/OCR_LANGS=eng+deu+ukr/' /opt/workbench/.env
+sudo apt install tesseract-ocr-rus tesseract-ocr-heb
+sudo sed -i 's/^OCR_LANGS=.*/OCR_LANGS=eng+rus+heb/' /opt/workbench/.env
 sudo systemctl restart workbench
 ```
 
-`apt-cache search tesseract-ocr-` lists everything available.
+Any other language works the same way:
+
+```bash
+sudo apt install tesseract-ocr-ukr tesseract-ocr-deu
+sudo sed -i 's/^OCR_LANGS=.*/OCR_LANGS=eng+rus+heb+ukr/' /opt/workbench/.env
+sudo systemctl restart workbench
+```
+
+`apt-cache search tesseract-ocr-` lists everything available, and the sidebar
+shows which languages are live. A language listed in `OCR_LANGS` whose pack is
+not installed is skipped with a line in the log — tesseract would otherwise
+refuse to read anything at all. Each extra language costs time on every page,
+so list only what you actually receive.
+
+Receipts are understood in all three: `ИТОГО`, `К оплате`, `סה"כ` and
+`לתשלום` are read as totals, `₽`/`руб` and `₪`/`ש"ח` as currencies, dates like
+`14.03.2024` and `14 марта 2024` as dates, and the tag keywords cover Russian
+and Hebrew wording for food, hardware, medical, utilities, transport, housing
+and the rest.
 
 ---
 
@@ -252,7 +281,9 @@ Some deliberate choices:
 - **OCR runs one file at a time** in a queue, at a lower scheduling priority,
   so a batch of uploads cannot make the rest of the machine unresponsive.
 - **PDFs with a text layer skip OCR entirely** via `pdftotext`, which is both
-  faster and more accurate than reading pixels.
+  faster and more accurate than reading pixels. Its right-to-left output is
+  stripped of the invisible bidi control characters it inserts, which would
+  otherwise sit inside words and break search.
 
 ### Without tesseract installed
 

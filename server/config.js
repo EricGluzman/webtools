@@ -41,5 +41,7 @@ module.exports = {
   PASSWORD: process.env.WEBTOOLS_PASSWORD || '',
   MAX_UPLOAD_BYTES: Number(process.env.MAX_UPLOAD_MB || 40) * 1024 * 1024,
   TRUST_PROXY: process.env.TRUST_PROXY === '1',
-  OCR_LANGS: process.env.OCR_LANGS || 'eng',
+  // Asked for by default; anything not installed is dropped at runtime with a
+  // note in the log rather than failing every scan.
+  OCR_LANGS: process.env.OCR_LANGS || 'eng+rus+heb',
 };

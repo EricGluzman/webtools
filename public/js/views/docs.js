@@ -377,7 +377,7 @@ export default async function render(root, ctx) {
         doc.kind !== 'document' ? h('span.badge', doc.kind) : null,
         doc.amount ? h('span.amount', formatMoney(doc.amount, doc.currency)) : null),
       h('div.doc-body',
-        h('strong.truncate', doc.title || doc.filename),
+        h('strong.truncate', { dir: 'auto' }, doc.title || doc.filename),
         h('div.meta',
           h('span', doc.doc_date ? formatDate(doc.doc_date) : relativeTime(doc.created_at)),
           statusLine(doc)),
@@ -396,10 +396,10 @@ export default async function render(root, ctx) {
       selectBox(doc),
       h('span.mini', thumbFor(doc, 16)),
       h('span.rmeta',
-        h('strong.truncate', doc.title || doc.filename),
+        h('strong.truncate', { dir: 'auto' }, doc.title || doc.filename),
         h('span.line2',
           h('span', doc.doc_date ? formatDate(doc.doc_date) : relativeTime(doc.created_at)),
-          doc.vendor ? h('span.truncate', doc.vendor) : null,
+          doc.vendor ? h('span.truncate', { dir: 'auto' }, doc.vendor) : null,
           ...doc.tags.slice(0, 3).map((tag) => h('span.chip', { class: `tone-${tag.color}` }, tag.name)),
           statusLine(doc))),
       doc.amount ? h('span.ramount', formatMoney(doc.amount, doc.currency)) : null
@@ -483,10 +483,12 @@ export default async function render(root, ctx) {
     const fieldRow = (label, control) => h('label.field', h('span.label', label), control);
 
     const titleInput = h('input.input', {
+      dir: 'auto',
       value: doc.title,
       oninput: (event) => patch({ title: event.target.value }),
     });
     const vendorInput = h('input.input', {
+      dir: 'auto',
       value: doc.vendor,
       placeholder: 'Shop or issuer',
       oninput: (event) => patch({ vendor: event.target.value }),
@@ -510,6 +512,7 @@ export default async function render(root, ctx) {
       oninput: (event) => patch({ currency: event.target.value.toUpperCase() }),
     });
     const noteInput = h('textarea.textarea', {
+      dir: 'auto',
       placeholder: 'Your own note about this document…',
       style: { minHeight: '70px', fontFamily: 'var(--font)', fontSize: '13.4px' },
       oninput: (event) => patch({ note: event.target.value }),
@@ -568,7 +571,7 @@ export default async function render(root, ctx) {
     const drawer = h('div.drawer.glass',
       h('div.drawer-head',
         h('div.crumb', { style: { flex: '1', minWidth: '0' } },
-          h('h1.truncate', { style: { fontSize: '17px' } }, doc.title || doc.filename),
+          h('h1.truncate', { dir: 'auto', style: { fontSize: '17px' } }, doc.title || doc.filename),
           h('small.dim.truncate', `${doc.filename} · ${formatBytes(doc.size)}${doc.pages > 1 ? ` · ${doc.pages} pages` : ''}`)),
         starButton,
         h('a.btn.btn-sm.btn-icon', { href: `/api/docs/${doc.id}/download`, title: 'Download' }, icon('download', { size: 15 })),
@@ -620,7 +623,8 @@ export default async function render(root, ctx) {
                 onclick: () => copyText(doc.text, 'Text copied'),
               }, 'copy') : null),
             doc.text
-              ? h('div.ocr-text', doc.text)
+              // dir=auto so Hebrew and other RTL scripts read the right way round.
+              ? h('div.ocr-text', { dir: 'auto' }, doc.text)
               : h('div.notice', { class: doc.ocr_status === 'failed' ? 'notice-bad' : 'notice-warn' },
                   icon('info', { size: 15 }),
                   h('span', doc.ocr_error || (doc.ocr_status === 'pending' || doc.ocr_status === 'working'

@@ -39,6 +39,20 @@ async function has(cmd) {
   }
 }
 
+/** Which trained language packs this machine actually has. */
+async function installedLangs() {
+  try {
+    // tesseract prints the list on stderr on some builds, stdout on others.
+    const out = await run('tesseract', ['--list-langs']).catch((err) => err.stderr || '');
+    return String(out)
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => /^[a-z_]{3,}$/i.test(line) && line !== 'osd');
+  } catch {
+    return [];
+  }
+}
+
 let capabilities = null;
 async function detect() {
   if (capabilities) return capabilities;
@@ -47,8 +61,39 @@ async function detect() {
     has('pdftotext'),
     has('pdftoppm'),
   ]);
-  capabilities = { tesseract, pdftotext, pdftoppm, sharp: Boolean(sharp) };
+
+  const available = tesseract ? await installedLangs() : [];
+  const wanted = OCR_LANGS.split('+').map((lang) => lang.trim()).filter(Boolean);
+  const usable = wanted.filter((lang) => available.includes(lang));
+  const missing = wanted.filter((lang) => !available.includes(lang));
+
+  // Tesseract fails outright on an unknown language, so only ask for packs
+  // that are really here and say plainly which ones are not.
+  if (missing.length && tesseract) {
+    console.warn(
+      `[webtools] OCR language pack missing: ${missing.join(', ')}. ` +
+      `Install with: sudo apt install ${missing.map((lang) => `tesseract-ocr-${lang}`).join(' ')}`
+    );
+  }
+
+  capabilities = {
+    tesseract,
+    pdftotext,
+    pdftoppm,
+    sharp: Boolean(sharp),
+    langs: usable.length ? usable : available.slice(0, 1),
+    availableLangs: available,
+    missingLangs: missing,
+  };
   return capabilities;
+}
+
+/**
+ * pdftotext wraps right-to-left runs in bidi control characters. They are
+ * invisible but they sit inside words, which breaks search and copy-paste.
+ */
+function stripBidiMarks(text) {
+  return text.replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '');
 }
 
 /** Read a PDF's embedded text layer. Fast, exact, and free when it exists. */
@@ -58,19 +103,22 @@ async function pdfTextLayer(file) {
     await run('pdftotext', ['-layout', '-q', file, tmp]);
     const text = fs.readFileSync(tmp, 'utf8');
     fs.unlinkSync(tmp);
-    return text;
+    return stripBidiMarks(text);
   } catch {
     return '';
   }
 }
 
 async function tesseractText(imagePath) {
+  const { langs } = await detect();
   const out = path.join(os.tmpdir(), `wt-ocr-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-  await run('tesseract', [imagePath, out, '-l', OCR_LANGS, '--oem', '1', '--psm', '4']);
+  const args = [imagePath, out];
+  if (langs.length) args.push('-l', langs.join('+'));
+  await run('tesseract', [...args, '--oem', '1', '--psm', '4']);
   const txtFile = `${out}.txt`;
   const text = fs.existsSync(txtFile) ? fs.readFileSync(txtFile, 'utf8') : '';
   if (fs.existsSync(txtFile)) fs.unlinkSync(txtFile);
-  return text;
+  return stripBidiMarks(text);
 }
 
 /** Grayscale + normalise + upscale small scans: cheap wins for OCR accuracy. */
@@ -180,4 +228,4 @@ async function extractText(storedName, mime) {
   }
 }
 
-module.exports = { detect, extractText, makeThumb, FILES_DIR, THUMBS_DIR };
+module.exports = { detect, extractText, makeThumb, installedLangs, FILES_DIR, THUMBS_DIR };
