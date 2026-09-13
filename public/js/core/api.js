@@ -50,6 +50,18 @@ export async function api(path, options = {}) {
     }
     throw new ApiError(message, 401);
   }
+
+  if (response.status === 429) {
+    let payload = {};
+    try {
+      payload = await response.clone().json();
+    } catch {
+      /* fall through to the generic message */
+    }
+    const error = new ApiError(payload.error || 'Too many attempts', 429);
+    error.lockedFor = payload.lockedFor || 0;
+    throw error;
+  }
   if (raw) {
     if (!response.ok) throw new ApiError(`Request failed (${response.status})`, response.status);
     return response;

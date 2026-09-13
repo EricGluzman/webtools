@@ -36,6 +36,8 @@ module.exports = {
   DATA_DIR,
   PORT: Number(process.env.PORT || 8712),
   HOST: process.env.HOST || '127.0.0.1',
+  // Either setting unlocks the app; WEBTOOLS_PIN wins when both are present.
+  PIN: process.env.WEBTOOLS_PIN || '',
   PASSWORD: process.env.WEBTOOLS_PASSWORD || '',
   MAX_UPLOAD_BYTES: Number(process.env.MAX_UPLOAD_MB || 40) * 1024 * 1024,
   TRUST_PROXY: process.env.TRUST_PROXY === '1',

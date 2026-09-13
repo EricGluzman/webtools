@@ -2,13 +2,15 @@
 #
 # Install Workbench on an Ubuntu/Debian server.
 #
-#   sudo ./scripts/install.sh tools.example.com
+#   sudo ./scripts/install.sh tools.example.com          # generates a password
+#   sudo ./scripts/install.sh tools.example.com 246813   # sets that PIN
 #
 # Re-running is safe: it updates the code and restarts the service.
 
 set -euo pipefail
 
 DOMAIN="${1:-}"
+PIN="${2:-}"
 APP_DIR="/opt/workbench"
 APP_USER="workbench"
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -55,20 +57,35 @@ say "Installing dependencies"
 cd "$APP_DIR"
 sudo -u "$APP_USER" npm install --omit=dev --no-audit --no-fund
 
+if [[ -n "$PIN" && ! "$PIN" =~ ^[0-9]{4,12}$ ]]; then
+  die "The PIN must be 4 to 12 digits."
+fi
+
 if [[ ! -f "$APP_DIR/.env" ]]; then
-  say "Creating .env with a generated password"
-  PASSWORD="$(head -c 18 /dev/urandom | base64 | tr -d '/+=' | head -c 20)"
+  if [[ -n "$PIN" ]]; then
+    say "Creating .env with your PIN"
+    CREDENTIAL_LINE="WEBTOOLS_PIN=$PIN"
+    CHOSEN_PIN="$PIN"
+  else
+    say "Creating .env with a generated password"
+    GENERATED_PASSWORD="$(head -c 18 /dev/urandom | base64 | tr -d '/+=' | head -c 20)"
+    CREDENTIAL_LINE="WEBTOOLS_PASSWORD=$GENERATED_PASSWORD"
+  fi
   cat > "$APP_DIR/.env" <<ENV
 PORT=8712
 HOST=127.0.0.1
-WEBTOOLS_PASSWORD=$PASSWORD
+$CREDENTIAL_LINE
 DATA_DIR=./data
 MAX_UPLOAD_MB=40
 TRUST_PROXY=1
 OCR_LANGS=eng
 ENV
   chmod 600 "$APP_DIR/.env"
-  GENERATED_PASSWORD="$PASSWORD"
+elif [[ -n "$PIN" ]]; then
+  say "Updating the PIN in the existing .env"
+  sed -i '/^WEBTOOLS_PIN=/d; /^WEBTOOLS_PASSWORD=/d' "$APP_DIR/.env"
+  echo "WEBTOOLS_PIN=$PIN" >> "$APP_DIR/.env"
+  CHOSEN_PIN="$PIN"
 fi
 
 chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
@@ -102,9 +119,11 @@ fi
 say "Done"
 if [[ -n "${GENERATED_PASSWORD:-}" ]]; then
   printf '\n    Your login password is:  \033[1;32m%s\033[0m\n' "$GENERATED_PASSWORD"
-  printf '    It is stored in %s — change it there and restart with:\n' "$APP_DIR/.env"
-  printf '      sudo systemctl restart workbench\n\n'
+  printf '    It is stored in %s\n\n' "$APP_DIR/.env"
+elif [[ -n "${CHOSEN_PIN:-}" ]]; then
+  printf '\n    Unlock the site with the PIN \033[1;32m%s\033[0m on the keypad.\n\n' "$CHOSEN_PIN"
 fi
+echo "    Change the PIN: sudo $APP_DIR/scripts/set-pin.sh 123456"
 echo "    Logs:    sudo journalctl -u workbench -f"
 echo "    Restart: sudo systemctl restart workbench"
 echo "    Backup:  sudo $APP_DIR/scripts/backup.sh"

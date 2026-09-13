@@ -68,7 +68,7 @@ The one-liner, from a copy of this repository on the server:
 ```bash
 git clone https://github.com/EricGluzman/webtools.git
 cd webtools
-sudo ./scripts/install.sh tools.yourdomain.com
+sudo ./scripts/install.sh tools.yourdomain.com 246813   # the PIN is optional
 ```
 
 That script:
@@ -76,7 +76,7 @@ That script:
 1. installs `tesseract-ocr`, `poppler-utils` and Node.js 22 if they are missing;
 2. creates a `workbench` system user and copies the app to `/opt/workbench`;
 3. writes `/opt/workbench/.env` with a **generated login password** (printed at
-   the end — write it down);
+   the end — write it down), or the PIN you passed as a second argument;
 4. installs and starts the `workbench` systemd service on `127.0.0.1:8712`;
 5. points an nginx server block at your subdomain.
 
@@ -133,7 +133,8 @@ service after changing anything: `sudo systemctl restart workbench`.
 | --- | --- | --- |
 | `PORT` | `8712` | Port the Node process listens on |
 | `HOST` | `127.0.0.1` | Bind address — keep it local when nginx is in front |
-| `WEBTOOLS_PASSWORD` | *(empty)* | Any non-empty value turns on the login screen. Empty means **no password at all** |
+| `WEBTOOLS_PIN` | *(empty)* | 4–12 digits. Shows a keypad lock screen. Takes priority over the password |
+| `WEBTOOLS_PASSWORD` | *(empty)* | A text password instead. With both empty there is **no lock screen at all** |
 | `DATA_DIR` | `./data` | Where the database, uploads and thumbnails live |
 | `MAX_UPLOAD_MB` | `40` | Per-file upload limit (also raise `client_max_body_size` in nginx) |
 | `TRUST_PROXY` | `1` | Marks the session cookie Secure and honours `X-Forwarded-*` |
@@ -172,6 +173,36 @@ Updating to a newer version: pull the repository on the server and re-run
 `sudo ./scripts/install.sh` — it keeps `.env` and `data/` untouched.
 
 ---
+
+## The lock screen
+
+Set a PIN and the site opens on a keypad. Type it on the pad, or just type the
+digits on a keyboard — it submits itself on the last one.
+
+```bash
+sudo /opt/workbench/scripts/set-pin.sh 246813            # keypad PIN
+sudo /opt/workbench/scripts/set-pin.sh --password 'a long passphrase'
+sudo /opt/workbench/scripts/set-pin.sh --open            # remove the lock
+```
+
+Four digits is only 10,000 combinations, so the lockout is doing the real work:
+
+| Wrong entries | What happens |
+| --- | --- |
+| 1–4 | "Wrong PIN", after a deliberate 0.4s pause |
+| 5 | That visitor is locked out for 1 minute |
+| 10 | 5 minutes |
+| 15 | 30 minutes |
+| 20+ | 1 hour, and it stays there |
+
+At that rate, working through every 4-digit combination would take years. Six
+digits costs you two extra taps and multiplies the work by a hundred, so prefer
+that if the subdomain is public. Sessions last 30 days in an HttpOnly cookie;
+to sign every device out, delete `data/session.key` and restart.
+
+Your actual PIN lives only in `/opt/workbench/.env` on the server, which is
+git-ignored. Keep it out of the repository — the numbers in these examples are
+deliberately not anyone's real PIN.
 
 ## Keyboard shortcuts
 

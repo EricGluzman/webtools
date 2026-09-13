@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { DATA_DIR, PASSWORD, TRUST_PROXY } = require('./config');
+const { DATA_DIR, PIN, PASSWORD, TRUST_PROXY } = require('./config');
 
 const COOKIE = 'wt_session';
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -14,7 +14,11 @@ if (!fs.existsSync(keyFile)) {
 }
 const SECRET = fs.readFileSync(keyFile, 'utf8').trim();
 
-const enabled = PASSWORD.length > 0;
+const CREDENTIAL = (PIN || PASSWORD).trim();
+const enabled = CREDENTIAL.length > 0;
+
+// A short numeric credential gets the keypad; anything else gets a text field.
+const mode = /^\d{4,12}$/.test(CREDENTIAL) ? 'pin' : 'password';
 
 function sign(value) {
   return crypto.createHmac('sha256', SECRET).update(value).digest('base64url');
@@ -75,19 +79,58 @@ function setCookie(res, token, maxAgeMs) {
   res.setHeader('Set-Cookie', bits.join('; '));
 }
 
-// Small in-memory throttle: five tries per minute per address.
+/**
+ * Escalating lockout, per address.
+ *
+ * A four-digit PIN is only 10,000 combinations, so the credential alone is not
+ * what keeps people out — this is. Five wrong tries buys a minute of silence,
+ * and every further run of five multiplies the wait, up to an hour. Guessing
+ * the whole space that way would take years.
+ */
+const LOCKOUT_STEPS = [60, 300, 1800, 3600]; // seconds
+const FREE_TRIES = 5;
+
 const attempts = new Map();
-function throttled(ip) {
-  const now = Date.now();
-  const entry = attempts.get(ip) || { count: 0, until: now + 60_000 };
-  if (now > entry.until) {
-    entry.count = 0;
-    entry.until = now + 60_000;
-  }
-  entry.count += 1;
+
+function attemptState(ip) {
+  const entry = attempts.get(ip) || { failures: 0, lockedUntil: 0, strikes: 0 };
   attempts.set(ip, entry);
-  return entry.count > 5;
+  return entry;
 }
+
+/** Seconds left on a lockout, or 0 when the address may try again. */
+function lockedFor(ip) {
+  const entry = attemptState(ip);
+  if (entry.lockedUntil <= Date.now()) return 0;
+  return Math.ceil((entry.lockedUntil - Date.now()) / 1000);
+}
+
+function recordFailure(ip) {
+  const entry = attemptState(ip);
+  entry.failures += 1;
+  if (entry.failures >= FREE_TRIES) {
+    entry.failures = 0;
+    const wait = LOCKOUT_STEPS[Math.min(entry.strikes, LOCKOUT_STEPS.length - 1)];
+    entry.strikes += 1;
+    entry.lockedUntil = Date.now() + wait * 1000;
+    return wait;
+  }
+  return 0;
+}
+
+function clearFailures(ip) {
+  attempts.delete(ip);
+}
+
+// Keep the map from growing without bound on a long-running server.
+setInterval(() => {
+  const cutoff = Date.now() - 6 * 60 * 60 * 1000;
+  for (const [ip, entry] of attempts) {
+    if (entry.lockedUntil < cutoff && entry.failures === 0) attempts.delete(ip);
+  }
+}, 60 * 60 * 1000).unref();
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function constantTimeEquals(a, b) {
   const ab = Buffer.from(String(a));
@@ -103,19 +146,46 @@ function requireAuth(req, res, next) {
 
 function mount(app) {
   app.get('/api/auth/state', (req, res) => {
-    res.json({ enabled, authed: isAuthed(req) });
+    res.json({
+      enabled,
+      authed: isAuthed(req),
+      mode,
+      length: mode === 'pin' ? CREDENTIAL.length : 0,
+      lockedFor: lockedFor(req.ip),
+    });
   });
 
-  app.post('/api/auth/login', (req, res) => {
+  app.post('/api/auth/login', async (req, res) => {
     if (!enabled) return res.json({ ok: true, authed: true });
-    if (throttled(req.ip)) {
-      return res.status(429).json({ error: 'Too many attempts. Wait a minute.' });
+
+    const locked = lockedFor(req.ip);
+    if (locked) {
+      return res.status(429).json({
+        error: `Too many attempts. Try again in ${formatWait(locked)}.`,
+        lockedFor: locked,
+      });
     }
-    const password = (req.body && req.body.password) || '';
-    if (!constantTimeEquals(password, PASSWORD)) {
-      return res.status(401).json({ error: 'Wrong password' });
+
+    const body = req.body || {};
+    const supplied = String(body.pin ?? body.password ?? '');
+
+    if (!constantTimeEquals(supplied, CREDENTIAL)) {
+      // A deliberate pause: it costs a real person nothing and makes an
+      // automated run through the keyspace far slower.
+      await wait(400);
+      const lockedNow = recordFailure(req.ip);
+      if (lockedNow) {
+        return res.status(429).json({
+          error: `Too many attempts. Try again in ${formatWait(lockedNow)}.`,
+          lockedFor: lockedNow,
+        });
+      }
+      return res.status(401).json({
+        error: mode === 'pin' ? 'Wrong PIN' : 'Wrong password',
+      });
     }
-    attempts.delete(req.ip);
+
+    clearFailures(req.ip);
     setCookie(res, issueToken(), MAX_AGE_MS);
     res.json({ ok: true, authed: true });
   });
@@ -126,4 +196,10 @@ function mount(app) {
   });
 }
 
-module.exports = { mount, requireAuth, isAuthed, enabled };
+function formatWait(seconds) {
+  if (seconds < 60) return `${seconds} seconds`;
+  const minutes = Math.round(seconds / 60);
+  return minutes === 1 ? 'a minute' : `${minutes} minutes`;
+}
+
+module.exports = { mount, requireAuth, isAuthed, enabled, mode };

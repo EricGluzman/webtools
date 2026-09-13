@@ -11,40 +11,145 @@ const view = () => $('#view');
 
 /* --------------------------------------------------------------- login */
 
-function renderLogin(message = '') {
+async function renderLogin(message = '') {
+  let state = { enabled: true, mode: 'password', length: 4, lockedFor: 0 };
+  try {
+    state = { ...state, ...(await api('/api/auth/state')) };
+  } catch {
+    /* offline: fall back to the password field */
+  }
+
   document.body.innerHTML = '';
   const backdrop = h('div.backdrop', { 'aria-hidden': 'true' },
     h('span.blob.blob-a'), h('span.blob.blob-b'), h('span.blob.blob-c'), h('span.grain'));
 
-  const password = h('input.input', { type: 'password', placeholder: 'Password', autofocus: true });
-  const error = h('p.small', { style: { color: 'var(--bad)', minHeight: '18px' } }, message);
+  const error = h('p.login-error', message);
+  const card = h('form.login-card.glass', { onsubmit: (event) => event.preventDefault() });
+  document.body.append(backdrop, h('div.login-wrap', card));
 
-  const submit = async () => {
+  /* ------------------------------------------------------- lockout */
+
+  let lockTimer = null;
+
+  function startLockout(seconds) {
+    clearInterval(lockTimer);
+    let left = seconds;
+    const tick = () => {
+      if (left <= 0) {
+        clearInterval(lockTimer);
+        lockTimer = null;
+        card.classList.remove('locked');
+        error.textContent = '';
+        return;
+      }
+      const minutes = Math.floor(left / 60);
+      const rest = left % 60;
+      error.textContent = `Locked. Try again in ${minutes ? `${minutes}m ` : ''}${rest}s`;
+      left -= 1;
+    };
+    card.classList.add('locked');
+    tick();
+    lockTimer = setInterval(tick, 1000);
+  }
+
+  async function submit(value) {
     error.textContent = '';
     try {
-      await api('/api/auth/login', { method: 'POST', body: { password: password.value } });
+      await api('/api/auth/login', { method: 'POST', body: { pin: value, password: value } });
       location.reload();
+      return true;
     } catch (err) {
-      error.textContent = err.message || 'Wrong password';
-      password.select();
+      if (err.lockedFor || /Try again in/.test(err.message || '')) {
+        const seconds = err.lockedFor || 60;
+        startLockout(seconds);
+      } else {
+        error.textContent = err.message || 'That did not work';
+      }
+      card.classList.remove('shake');
+      void card.offsetWidth;         // restart the animation
+      card.classList.add('shake');
+      return false;
     }
-  };
+  }
 
+  /* ---------------------------------------------------- pin keypad */
+
+  if (state.mode === 'pin') {
+    const size = state.length || 4;
+    let digits = '';
+
+    const dots = h('div.pin-dots', ...Array.from({ length: size }, () => h('span.pin-dot')));
+
+    const paint = () => {
+      [...dots.children].forEach((dot, index) => dot.classList.toggle('on', index < digits.length));
+    };
+
+    const press = async (digit) => {
+      if (card.classList.contains('locked') || digits.length >= size) return;
+      digits += digit;
+      paint();
+      if (digits.length === size) {
+        card.classList.add('checking');
+        const ok = await submit(digits);
+        card.classList.remove('checking');
+        if (!ok) {
+          digits = '';
+          paint();
+        }
+      }
+    };
+
+    const back = () => {
+      digits = digits.slice(0, -1);
+      paint();
+    };
+
+    const key = (label, onclick, className = '') =>
+      h('button.pin-key', { type: 'button', class: className, onclick }, label);
+
+    const pad = h('div.pin-pad',
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => key(String(digit), () => press(String(digit)))),
+      h('span'),
+      key('0', () => press('0')),
+      key('', back, 'pin-key-back')
+    );
+    pad.querySelector('.pin-key-back').append(icon('arrowLeft', { size: 19 }));
+
+    document.addEventListener('keydown', (event) => {
+      if (/^[0-9]$/.test(event.key)) press(event.key);
+      else if (event.key === 'Backspace') back();
+    });
+
+    mount(card,
+      h('span.brand-mark'),
+      h('h1', 'Workbench'),
+      h('p', 'Enter your PIN to unlock'),
+      dots,
+      error,
+      pad
+    );
+    if (state.lockedFor) startLockout(state.lockedFor);
+    return;
+  }
+
+  /* -------------------------------------------------- password form */
+
+  const password = h('input.input', { type: 'password', placeholder: 'Password', autofocus: true });
   password.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') submit();
+    if (event.key === 'Enter') submit(password.value);
   });
 
-  document.body.append(backdrop,
-    h('div.login-wrap',
-      h('form.login-card.glass', { onsubmit: (event) => { event.preventDefault(); submit(); } },
-        h('span.brand-mark'),
-        h('h1', 'Workbench'),
-        h('p', 'This instance is private. Enter the password to continue.'),
-        password,
-        error,
-        h('button.btn.btn-primary', { type: 'submit', style: { width: '100%', height: '40px' } }, 'Unlock')
-      )
-    )
+  mount(card,
+    h('span.brand-mark'),
+    h('h1', 'Workbench'),
+    h('p', 'This instance is private. Enter the password to continue.'),
+    password,
+    error,
+    h('button.btn.btn-primary', {
+      type: 'submit',
+      style: { width: '100%', height: '40px' },
+      onclick: () => submit(password.value),
+    }, 'Unlock')
   );
   setTimeout(() => password.focus(), 60);
 }

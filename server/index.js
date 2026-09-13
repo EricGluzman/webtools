@@ -85,7 +85,9 @@ app.listen(config.PORT, config.HOST, async () => {
   const caps = await ocr.detect();
   console.log(`[webtools] listening on http://${config.HOST}:${config.PORT}`);
   console.log(`[webtools] data dir: ${config.DATA_DIR}`);
-  console.log(`[webtools] password gate: ${auth.enabled ? 'on' : 'OFF (open instance)'}`);
+  console.log(
+    `[webtools] lock screen: ${auth.enabled ? `on (${auth.mode})` : 'OFF — anyone who can reach this can use it'}`
+  );
   console.log(
     `[webtools] ocr: tesseract=${caps.tesseract} poppler=${caps.pdftoppm} sharp=${caps.sharp}`
   );
