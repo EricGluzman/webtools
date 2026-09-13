@@ -1,0 +1,206 @@
+/* ---------------------------------------------------------------
+   Tokens, reset and the ambient background.
+   --------------------------------------------------------------- */
+
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter,
+          Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+
+  --r-xl: 28px;
+  --r-lg: 22px;
+  --r-md: 14px;
+  --r-sm: 10px;
+  --r-xs: 8px;
+
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 22px; --sp-6: 30px; --sp-7: 42px;
+
+  --ease: cubic-bezier(.22, 1, .36, .99);
+  --fast: 140ms var(--ease);
+  --base: 240ms var(--ease);
+  --slow: 420ms var(--ease);
+
+  --sidebar-w: 244px;
+  --topbar-h: 66px;
+}
+
+/* Dark is the house style; light is a full, deliberate second theme. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #07080c;
+  --bg-2: #0d0f16;
+  --ink: rgba(255, 255, 255, .93);
+  --ink-2: rgba(255, 255, 255, .60);
+  --ink-3: rgba(255, 255, 255, .34);
+  --ink-inv: #0b0d13;
+
+  --accent: #7fa5ff;
+  --accent-2: #b98cff;
+  --accent-ink: #08101f;
+  --accent-soft: rgba(127, 165, 255, .16);
+
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #fb7185;
+
+  --glass-base: rgba(13, 15, 22, .50);
+  --glass: rgba(255, 255, 255, .05);
+  --glass-2: rgba(255, 255, 255, .08);
+  --glass-3: rgba(255, 255, 255, .125);
+  --stroke: rgba(255, 255, 255, .11);
+  --stroke-2: rgba(255, 255, 255, .18);
+  --sheen: rgba(255, 255, 255, .30);
+  --field: rgba(8, 10, 16, .42);
+  --shadow: 0 1px 1px rgba(0,0,0,.12), 0 10px 30px -12px rgba(0,0,0,.66), 0 34px 70px -40px rgba(0,0,0,.8);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.22), 0 6px 18px -10px rgba(0,0,0,.6);
+  --blob-a: #4658d6;
+  --blob-b: #0f8f83;
+  --blob-c: #a13a7f;
+  --blob-opacity: .42;
+  --veil: rgba(7, 8, 12, .44);
+  --grain-opacity: .26;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #eceff6;
+  --bg-2: #f7f8fc;
+  --ink: #0e1118;
+  --ink-2: rgba(14, 17, 24, .62);
+  --ink-3: rgba(14, 17, 24, .40);
+  --ink-inv: #ffffff;
+
+  --accent: #3f6bff;
+  --accent-2: #8b5cf6;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(63, 107, 255, .12);
+
+  --ok: #16a34a;
+  --warn: #b45309;
+  --bad: #e11d48;
+
+  --glass-base: rgba(255, 255, 255, .30);
+  --glass: rgba(255, 255, 255, .42);
+  --glass-2: rgba(255, 255, 255, .58);
+  --glass-3: rgba(255, 255, 255, .78);
+  --stroke: rgba(14, 17, 24, .09);
+  --stroke-2: rgba(14, 17, 24, .16);
+  --sheen: rgba(255, 255, 255, .9);
+  --field: rgba(255, 255, 255, .72);
+  --shadow: 0 1px 1px rgba(20,26,48,.04), 0 12px 30px -14px rgba(20,26,48,.28), 0 30px 60px -40px rgba(20,26,48,.35);
+  --shadow-sm: 0 1px 2px rgba(20,26,48,.06), 0 6px 16px -10px rgba(20,26,48,.30);
+  --blob-a: #7d99ff;
+  --blob-b: #7fe3d4;
+  --blob-c: #f3badd;
+  --blob-opacity: .50;
+  --veil: rgba(238, 241, 247, .42);
+  --grain-opacity: .14;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+h1, h2, h3, h4 { margin: 0; font-weight: 620; letter-spacing: -.018em; }
+h1 { font-size: 25px; }
+h2 { font-size: 18px; }
+h3 { font-size: 15px; }
+p { margin: 0; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code, pre, .mono { font-family: var(--mono); font-size: 12.8px; }
+
+::selection { background: color-mix(in oklab, var(--accent) 42%, transparent); color: var(--ink); }
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in oklab, var(--accent) 70%, transparent);
+}
+
+/* Slim, unobtrusive scrollbars that match the glass. */
+* { scrollbar-width: thin; scrollbar-color: var(--stroke-2) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--stroke-2);
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--ink-3); background-clip: content-box; }
+
+/* ----------------------------------------------------- background */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 12% -20%, color-mix(in oklab, var(--blob-a) 14%, transparent), transparent 58%),
+    radial-gradient(100% 80% at 100% -10%, color-mix(in oklab, var(--blob-c) 10%, transparent), transparent 52%),
+    linear-gradient(180deg, var(--bg-2), var(--bg) 58%);
+}
+
+/* A veil over the colour keeps the glass neutral and the text readable. */
+.backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--veil);
+}
+
+.blob {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(115px);
+  opacity: var(--blob-opacity);
+}
+.blob-a {
+  width: 40vw; height: 40vw; min-width: 320px; min-height: 320px;
+  left: -12vw; top: -18vw;
+  background: var(--blob-a);
+}
+.blob-b {
+  width: 34vw; height: 34vw; min-width: 280px; min-height: 280px;
+  right: -8vw; top: 14vh;
+  background: var(--blob-b);
+}
+.blob-c {
+  width: 30vw; height: 30vw; min-width: 240px; min-height: 240px;
+  left: 30vw; bottom: -20vw;
+  background: var(--blob-c);
+}
+
+/* Fine grain stops the gradients from looking like flat plastic. */
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: var(--grain-opacity);
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

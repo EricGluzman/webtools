@@ -1,0 +1,44 @@
+# Workbench behind nginx on its own subdomain.
+#
+#   sudo cp scripts/nginx.conf.example /etc/nginx/sites-available/workbench
+#   sudo sed -i 's/tools.example.com/YOUR.DOMAIN/' /etc/nginx/sites-available/workbench
+#   sudo ln -s /etc/nginx/sites-available/workbench /etc/nginx/sites-enabled/
+#   sudo nginx -t && sudo systemctl reload nginx
+#   sudo certbot --nginx -d YOUR.DOMAIN     # adds the TLS block below automatically
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name tools.example.com;
+
+    # certbot rewrites this to a redirect once a certificate is issued.
+    location / {
+        proxy_pass http://127.0.0.1:8712;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Scanned PDFs and phone photos are large; OCR replies can be slow.
+        client_max_body_size 60m;
+        proxy_read_timeout   300s;
+        proxy_send_timeout   300s;
+    }
+
+    # Static assets are fingerprint-free, so let the app decide freshness.
+    location ~* \.(css|js|svg|png|jpg|webp|woff2)$ {
+        proxy_pass http://127.0.0.1:8712;
+        proxy_set_header Host $host;
+        expires 1h;
+        add_header Cache-Control "public";
+    }
+
+    gzip on;
+    gzip_types text/css application/javascript image/svg+xml application/json;
+    gzip_min_length 1024;
+
+    access_log /var/log/nginx/workbench.access.log;
+    error_log  /var/log/nginx/workbench.error.log;
+}

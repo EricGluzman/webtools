@@ -1,0 +1,42 @@
+[Unit]
+Description=Workbench — private utility hub, notes and document organizer
+Documentation=https://github.com/EricGluzman/webtools
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=workbench
+Group=workbench
+WorkingDirectory=/opt/workbench
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+RestartSec=3
+Environment=NODE_ENV=production
+
+# OCR is CPU-heavy; keep it from starving the rest of the machine.
+Nice=5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+
+# Hardening: the app only ever needs to write inside its own data directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/workbench/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+SystemCallArchitectures=native
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=workbench
+
+[Install]
+WantedBy=multi-user.target

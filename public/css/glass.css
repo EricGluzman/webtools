@@ -1,0 +1,357 @@
+/* ---------------------------------------------------------------
+   The glass surface and every control built on top of it.
+   --------------------------------------------------------------- */
+
+.glass {
+  position: relative;
+  background:
+    linear-gradient(160deg, var(--glass-2), var(--glass) 46%),
+    var(--glass-base);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+
+/* Top-edge specular line: the detail that sells the material. */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  margin: 0 14px;
+  background: linear-gradient(90deg, transparent, var(--sheen), transparent);
+  opacity: .55;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.glass-soft {
+  background: linear-gradient(160deg, var(--glass), transparent), var(--glass-base);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+}
+
+/* ------------------------------------------------------------ buttons */
+
+.btn {
+  --btn-bg: var(--glass-2);
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 11px;
+  border: 1px solid var(--stroke);
+  background: var(--btn-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 540;
+  letter-spacing: -.006em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform var(--fast), background var(--fast), border-color var(--fast), box-shadow var(--fast), opacity var(--fast);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--sheen) 40%, transparent);
+}
+.btn:hover { background: var(--glass-3); border-color: var(--stroke-2); }
+.btn:active { transform: scale(.97); }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--accent-ink);
+  background: linear-gradient(140deg, var(--accent), color-mix(in oklab, var(--accent-2) 62%, var(--accent)));
+  box-shadow: 0 6px 20px -8px color-mix(in oklab, var(--accent) 80%, transparent),
+              inset 0 1px 0 rgba(255,255,255,.34);
+}
+.btn-primary:hover { filter: brightness(1.07); background: linear-gradient(140deg, var(--accent), var(--accent-2)); }
+
+.btn-ghost { background: transparent; border-color: transparent; color: var(--ink-2); box-shadow: none; }
+.btn-ghost:hover { background: var(--glass-2); color: var(--ink); }
+
+.btn-danger { color: var(--bad); border-color: color-mix(in oklab, var(--bad) 32%, transparent); }
+.btn-danger:hover { background: color-mix(in oklab, var(--bad) 16%, transparent); }
+
+.btn-sm { height: 30px; padding: 0 10px; font-size: 12.5px; border-radius: 9px; }
+.btn-icon { width: 36px; padding: 0; }
+.btn-icon.btn-sm { width: 30px; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+
+/* --------------------------------------------------------- form fields */
+
+.input, .textarea, .select {
+  width: 100%;
+  font: inherit;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--stroke);
+  border-radius: 11px;
+  padding: 9px 12px;
+  transition: border-color var(--fast), box-shadow var(--fast), background var(--fast);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.14);
+}
+.input::placeholder, .textarea::placeholder { color: var(--ink-3); }
+.input:hover, .textarea:hover, .select:hover { border-color: var(--stroke-2); }
+.input:focus, .textarea:focus, .select:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 60%, transparent);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.12), 0 0 0 3px var(--accent-soft);
+  background: color-mix(in oklab, var(--field) 82%, var(--accent-soft));
+}
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: 12.9px;
+  line-height: 1.62;
+  tab-size: 2;
+}
+.select {
+  appearance: none;
+  padding-right: 32px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  background-size: 15px;
+}
+.select option { background: var(--bg-2); color: var(--ink); }
+
+.field { display: grid; gap: 6px; }
+.label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 13px; color: var(--ink-2); }
+.check input { accent-color: var(--accent); width: 15px; height: 15px; }
+
+/* Sliding segmented control, iOS style. */
+.segmented {
+  display: inline-flex;
+  position: relative;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 12px;
+  background: var(--field);
+  border: 1px solid var(--stroke);
+}
+.segmented button {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  padding: 5px 13px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: color var(--fast);
+}
+.segmented button[aria-selected="true"] { color: var(--ink); }
+.segmented .thumb {
+  position: absolute;
+  z-index: 0;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 9px;
+  background: var(--glass-3);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 color-mix(in oklab, var(--sheen) 50%, transparent);
+  transition: transform var(--base), width var(--base);
+}
+
+/* ------------------------------------------------------------- chips */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12.2px;
+  font-weight: 550;
+  color: var(--ink-2);
+  background: var(--glass-2);
+  border: 1px solid var(--stroke);
+  white-space: nowrap;
+  transition: all var(--fast);
+}
+button.chip { cursor: pointer; }
+button.chip:hover { color: var(--ink); border-color: var(--stroke-2); background: var(--glass-3); }
+.chip[aria-pressed="true"], .chip.active {
+  color: var(--ink);
+  background: var(--accent-soft);
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .85; }
+.chip-x { margin-right: -4px; opacity: .5; cursor: pointer; }
+.chip-x:hover { opacity: 1; }
+
+/* Tag colours stay muted so a page of them still reads calmly. */
+.tone-amber   { --tone: #f5b642; } .tone-lime  { --tone: #a3d959; }
+.tone-violet  { --tone: #b98cff; } .tone-rose  { --tone: #fb7185; }
+.tone-sky     { --tone: #63b3ff; } .tone-cyan  { --tone: #4fd1c5; }
+.tone-emerald { --tone: #4ade80; } .tone-blue  { --tone: #7fa5ff; }
+.tone-indigo  { --tone: #9aa0ff; } .tone-orange{ --tone: #fb923c; }
+.tone-teal    { --tone: #2dd4bf; } .tone-pink  { --tone: #f472b6; }
+.tone-yellow  { --tone: #facc15; } .tone-slate { --tone: #94a3b8; }
+.chip[class*="tone-"] {
+  color: color-mix(in oklab, var(--tone) 78%, var(--ink));
+  background: color-mix(in oklab, var(--tone) 14%, transparent);
+  border-color: color-mix(in oklab, var(--tone) 30%, transparent);
+}
+
+/* -------------------------------------------------------------- cards */
+
+.card {
+  position: relative;
+  background: linear-gradient(165deg, var(--glass), transparent 80%), var(--glass-base);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(22px) saturate(165%);
+  -webkit-backdrop-filter: blur(22px) saturate(165%);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--base), border-color var(--base), background var(--base), box-shadow var(--base);
+}
+a.card, button.card { display: block; text-align: left; cursor: pointer; color: inherit; font: inherit; }
+a.card:hover, button.card:hover, .card.hoverable:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(165deg, var(--glass-2), transparent 80%), var(--glass-base);
+  border-color: var(--stroke-2);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+}
+
+.divider { height: 1px; background: var(--stroke); border: 0; margin: var(--sp-4) 0; }
+
+/* ------------------------------------------------- overlays and toasts */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: color-mix(in oklab, var(--bg) 58%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fade var(--fast);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+@keyframes fade { from { opacity: 0; } }
+
+.modal {
+  width: min(560px, 100%);
+  max-height: 86vh;
+  overflow: auto;
+  padding: var(--sp-5);
+  border-radius: var(--r-xl);
+  animation: pop var(--base);
+}
+@keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+
+.modal h2 { margin-bottom: 6px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--sp-5); }
+
+.toasts {
+  position: fixed;
+  z-index: 90;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 13.2px;
+  font-weight: 540;
+  color: var(--ink);
+  animation: toast-in var(--base);
+  box-shadow: var(--shadow);
+}
+.toast.out { animation: toast-out var(--fast) forwards; }
+.toast .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.toast.error .dot { background: var(--bad); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(.96); } }
+@keyframes toast-out { to { opacity: 0; transform: translateY(6px) scale(.98); } }
+
+/* ------------------------------------------------------ misc helpers */
+
+.row { display: flex; align-items: center; gap: var(--sp-3); }
+.row-wrap { flex-wrap: wrap; }
+.spacer { flex: 1 1 auto; }
+.muted { color: var(--ink-2); }
+.dim { color: var(--ink-3); }
+.small { font-size: 12.6px; }
+.tiny { font-size: 11.6px; }
+.mono-block {
+  font-family: var(--mono);
+  font-size: 12.7px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.stack { display: grid; gap: var(--sp-4); }
+.stack-sm { display: grid; gap: var(--sp-2); }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hidden { display: none !important; }
+
+.empty {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
+  padding: var(--sp-7) var(--sp-4);
+  color: var(--ink-3);
+}
+.empty svg { width: 34px; height: 34px; opacity: .5; }
+
+.spinner {
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--stroke-2);
+  border-top-color: var(--accent);
+  animation: spin .8s linear infinite;
+  flex: none;
+  /* Own layer: spinning must not force the glass behind it to re-blur. */
+  will-change: transform;
+  contain: strict;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--glass-2);
+  border: 1px solid var(--stroke);
+  box-shadow: 0 1px 0 var(--stroke);
+}
