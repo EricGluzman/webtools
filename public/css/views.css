@@ -402,9 +402,10 @@ mark.hit { background: color-mix(in oklab, var(--accent) 38%, transparent); colo
 }
 .doc-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
 .doc-thumb .ph { color: var(--ink-3); }
+/* Top-left belongs to the select checkbox, so the kind badge sits opposite. */
 .doc-thumb .badge {
   position: absolute;
-  left: 8px; top: 8px;
+  right: 8px; top: 8px;
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 10.6px;
@@ -434,10 +435,71 @@ mark.hit { background: color-mix(in oklab, var(--accent) 38%, transparent); colo
 .doc-body .tags { display: flex; gap: 5px; flex-wrap: wrap; }
 .doc-body .chip { height: 21px; font-size: 11px; padding: 0 8px; }
 
+/* ---- multi-select ---- */
+
+.selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 16px;
+  border-radius: var(--r-lg);
+  border: 1px solid color-mix(in oklab, var(--accent) 38%, transparent);
+  background: linear-gradient(165deg, var(--accent-soft), transparent 80%), var(--glass-base);
+  backdrop-filter: blur(22px) saturate(165%);
+  -webkit-backdrop-filter: blur(22px) saturate(165%);
+  box-shadow: var(--shadow-sm);
+  animation: bar-in var(--base);
+}
+@keyframes bar-in { from { opacity: 0; transform: translateY(-6px); } }
+.selection-bar .sel-count { font-size: 13.4px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.select-box {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--stroke-2);
+  background: color-mix(in oklab, var(--bg) 62%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(.85);
+  transition: opacity var(--fast), transform var(--fast), background var(--fast), border-color var(--fast), color var(--fast);
+}
+.doc-card:hover .select-box,
+.doc-row:hover .select-box,
+.selecting .select-box,
+.select-box:focus-visible { opacity: 1; transform: scale(1); }
+
+.select-box:hover { border-color: var(--accent); }
+.selected .select-box {
+  opacity: 1;
+  transform: scale(1);
+  color: var(--accent-ink);
+  background: linear-gradient(var(--accent), var(--accent-2));
+  border-color: transparent;
+}
+
+.doc-card.selected,
+.doc-row.selected {
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
+  background: linear-gradient(165deg, var(--accent-soft), transparent 80%), var(--glass-base);
+}
+.doc-card.selected { box-shadow: var(--shadow-sm), 0 0 0 1px color-mix(in oklab, var(--accent) 40%, transparent); }
+.selecting .doc-card, .selecting .doc-row { cursor: default; }
+
 .doc-rows { display: grid; gap: 6px; }
 .doc-row {
+  position: relative;
   display: grid;
-  grid-template-columns: 42px 1fr auto;
+  grid-template-columns: 22px 42px 1fr auto;
   gap: 12px;
   align-items: center;
   padding: 9px 12px;
@@ -448,6 +510,8 @@ mark.hit { background: color-mix(in oklab, var(--accent) 38%, transparent); colo
   transition: all var(--fast);
 }
 .doc-row:hover { background: var(--glass-2); border-color: var(--stroke-2); }
+.doc-row .select-box { position: static; opacity: 1; transform: none; }
+.doc-row:not(:hover):not(.selected) .select-box { border-color: var(--stroke); opacity: .45; }
 .doc-row .mini { width: 42px; height: 42px; border-radius: 9px; overflow: hidden; background: var(--field); display: grid; place-items: center; }
 .doc-row .mini img { width: 100%; height: 100%; object-fit: cover; }
 .doc-row .rmeta { display: grid; gap: 2px; min-width: 0; }

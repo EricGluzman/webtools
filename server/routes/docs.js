@@ -171,6 +171,17 @@ router.post('/', (req, res) => {
   });
 });
 
+router.post('/bulk-delete', (req, res) => {
+  const ids = Array.isArray(req.body && req.body.ids) ? req.body.ids : [];
+  if (!ids.length) return res.status(400).json({ error: 'No documents given' });
+  if (ids.length > 500) return res.status(400).json({ error: 'Too many documents at once' });
+
+  const found = ids.map((id) => getDoc.get(String(id))).filter(Boolean);
+  for (const doc of found) removeDocument(doc);
+
+  res.json({ deleted: found.length, missing: ids.length - found.length });
+});
+
 router.get('/stats', (_req, res) => {
   const totals = db
     .prepare(
@@ -415,20 +426,28 @@ router.post('/:id/reprocess', (req, res) => {
   res.json({ ok: true });
 });
 
-router.delete('/:id', (req, res) => {
-  const doc = getDoc.get(req.params.id);
-  if (!doc) return res.status(404).json({ error: 'Document not found' });
-  for (const file of [path.join(ocr.FILES_DIR, doc.stored_name), doc.thumb && path.join(ocr.THUMBS_DIR, doc.thumb)]) {
-    if (file && fs.existsSync(file)) {
-      try {
-        fs.unlinkSync(file);
-      } catch {
-        /* the row goes either way */
-      }
+/** Remove one document: its file, its thumbnail, its row and its index entry. */
+function removeDocument(doc) {
+  const files = [
+    path.join(ocr.FILES_DIR, doc.stored_name),
+    doc.thumb && path.join(ocr.THUMBS_DIR, doc.thumb),
+  ];
+  for (const file of files) {
+    if (!file || !fs.existsSync(file)) continue;
+    try {
+      fs.unlinkSync(file);
+    } catch {
+      /* the row goes either way; a stray file is not worth failing over */
     }
   }
   db.prepare(`DELETE FROM documents WHERE id = ?`).run(doc.id);
   unindex(doc.id);
+}
+
+router.delete('/:id', (req, res) => {
+  const doc = getDoc.get(req.params.id);
+  if (!doc) return res.status(404).json({ error: 'Document not found' });
+  removeDocument(doc);
   res.json({ ok: true });
 });
 

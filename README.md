@@ -57,6 +57,17 @@ reads out what it can:
 Everything is editable afterwards, every word of the extracted text is
 full-text searchable, and the whole pile exports to CSV for bookkeeping.
 
+**Clearing things out.** Hover any card or row and a checkbox appears in the
+corner. Tick one and the view switches to picking mode: a plain click then
+selects instead of opening, shift-click takes everything between two items, and
+a bar shows what you have chosen with **Select all**, **Download** (for a single
+file) and **Delete**. <kbd>Ctrl A</kbd> / <kbd>⌘A</kbd> takes everything on
+screen, <kbd>Esc</kbd> drops the selection. Deleting asks once, then removes the
+files, their thumbnails and their search entries in one go.
+
+Because selection follows the current filter, "delete every receipt from that
+shop" is: search for it, <kbd>⌘A</kbd>, Delete.
+
 ![Documents](docs/screenshots/documents.jpg)
 
 ---
@@ -211,7 +222,9 @@ deliberately not anyone's real PIN.
 | <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> | Command palette — every tool and action |
 | <kbd>/</kbd> | Same, when you are not typing in a field |
 | <kbd>↑</kbd> <kbd>↓</kbd> <kbd>↵</kbd> | Move through and open a result |
-| <kbd>Esc</kbd> | Close the palette, a dialog or the document drawer |
+| <kbd>Esc</kbd> | Close the palette, a dialog or the document drawer — or drop a selection |
+| <kbd>Ctrl A</kbd> / <kbd>⌘A</kbd> | Select every document on screen |
+| Shift-click | Select a range of documents |
 
 ---
 

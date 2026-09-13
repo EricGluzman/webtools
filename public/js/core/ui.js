@@ -165,22 +165,34 @@ export function copyButton(getText, { label = 'Copy' } = {}) {
 
 export function segmented(options, current, onChange) {
   const thumb = h('span.thumb');
+  let active = current;
+
   const buttons = options.map((option) =>
     h('button', {
       type: 'button',
       role: 'tab',
-      'aria-selected': String(option.value === current),
-      onclick: () => onChange(option.value),
+      'aria-selected': String(option.value === active),
+      onclick: () => {
+        if (option.value === active) return;
+        active = option.value;
+        // The control owns its own state, so callers only handle the change.
+        buttons.forEach((button, index) =>
+          button.setAttribute('aria-selected', String(options[index].value === active)));
+        place();
+        onChange(active);
+      },
     }, option.label)
   );
+
   const root = h('div.segmented', { role: 'tablist' }, thumb, ...buttons);
 
   const place = () => {
-    const active = buttons.find((button) => button.getAttribute('aria-selected') === 'true') || buttons[0];
-    if (!active) return;
-    thumb.style.width = `${active.offsetWidth}px`;
-    thumb.style.transform = `translateX(${active.offsetLeft - 3}px)`;
+    const selected = buttons[options.findIndex((option) => option.value === active)] || buttons[0];
+    if (!selected || !selected.offsetWidth) return;
+    thumb.style.width = `${selected.offsetWidth}px`;
+    thumb.style.transform = `translateX(${selected.offsetLeft - 3}px)`;
   };
+
   requestAnimationFrame(place);
   new ResizeObserver(place).observe(root);
   return root;

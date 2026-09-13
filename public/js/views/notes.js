@@ -328,23 +328,20 @@ export default async function render(root, ctx) {
     actions: [h('button.btn.btn-sm.btn-primary', { onclick: () => addNote() }, icon('plus', { size: 15 }), h('span.btn-label', 'New note'))],
   });
 
-  const toolbar = h('div.notes-toolbar');
-  const toolbarParts = () => [
+  const toolbar = h('div.notes-toolbar',
     h('div.searchfield', { style: { flex: '1 1 200px', maxWidth: '320px' } }, search),
     h('span.spacer'),
     segmented([{ value: 'board', label: 'Board' }, { value: 'list', label: 'List' }], view, (value) => {
       view = store.set('notesView', value);
-      mount(toolbar, ...toolbarParts());
       draw();
-    }),
-  ];
+    })
+  );
 
   search.addEventListener('input', debounce(() => {
     filter = search.value;
     draw();
   }, 120));
 
-  mount(toolbar, ...toolbarParts());
   mount(root, h('div.page', toolbar, stage));
 
   try {

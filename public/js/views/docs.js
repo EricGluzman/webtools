@@ -29,9 +29,15 @@ export default async function render(root, ctx) {
   let view = store.get('docsView') === 'list' ? 'list' : 'grid';
   let pollTimer = null;
 
+  // Multi-select: ids picked out for a bulk action, and the last one clicked
+  // so shift-click can fill in the range between them.
+  const selection = new Set();
+  let lastClickedId = null;
+
   /* --------------------------------------------------------- pieces */
 
   const resultsHost = h('div');
+  const selectionBar = h('div.selection-bar.hidden');
   const tagCloud = h('div.tag-cloud');
   const statsHost = h('div.stat-cards');
   const uploadHost = h('div.upload-list');
@@ -109,6 +115,20 @@ export default async function render(root, ctx) {
     }
   }
 
+  const onKeyDown = (event) => {
+    const typing = /^(input|textarea|select)$/i.test(event.target.tagName) || event.target.isContentEditable;
+    if (event.key === 'Escape' && selection.size && !document.querySelector('.drawer')) {
+      clearSelection();
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a' && !typing && documents.length) {
+      event.preventDefault();
+      for (const doc of documents) selection.add(doc.id);
+      paintSelection();
+    }
+  };
+  window.addEventListener('keydown', onKeyDown);
+
   const onGlobalFiles = () => {
     const files = window.__pendingUploads || [];
     window.__pendingUploads = null;
@@ -135,6 +155,9 @@ export default async function render(root, ctx) {
       api('/api/docs/stats'),
     ]);
     documents = docsResult.documents;
+    // Anything that has gone away (deleted, or filtered out) leaves the selection.
+    const visible = new Set(documents.map((doc) => doc.id));
+    for (const id of [...selection]) if (!visible.has(id)) selection.delete(id);
     tags = tagsResult.tags.filter((tag) => tag.count > 0);
     stats = statsResult;
     setCount('docs', stats.totals.count);
@@ -222,10 +245,135 @@ export default async function render(root, ctx) {
     return h('span.ph', icon(doc.mime === 'application/pdf' ? 'file' : 'image', { size: fallbackSize }));
   }
 
+  /* ------------------------------------------------------ selection */
+
+  function toggleSelect(id, range = false) {
+    if (range && lastClickedId && lastClickedId !== id) {
+      const order = documents.map((doc) => doc.id);
+      const from = order.indexOf(lastClickedId);
+      const to = order.indexOf(id);
+      if (from !== -1 && to !== -1) {
+        const [start, end] = from < to ? [from, to] : [to, from];
+        const selecting = !selection.has(id);
+        for (const between of order.slice(start, end + 1)) {
+          selecting ? selection.add(between) : selection.delete(between);
+        }
+        lastClickedId = id;
+        return paintSelection();
+      }
+    }
+    selection.has(id) ? selection.delete(id) : selection.add(id);
+    lastClickedId = id;
+    paintSelection();
+  }
+
+  function clearSelection() {
+    selection.clear();
+    lastClickedId = null;
+    paintSelection();
+  }
+
+  /** Update classes in place — re-rendering the grid here would be wasteful. */
+  function paintSelection() {
+    const active = selection.size > 0;
+    resultsHost.classList.toggle('selecting', active);
+    for (const node of resultsHost.querySelectorAll('[data-id]')) {
+      node.classList.toggle('selected', selection.has(node.dataset.id));
+    }
+    drawSelectionBar();
+  }
+
+  function drawSelectionBar() {
+    const count = selection.size;
+    selectionBar.classList.toggle('hidden', count === 0);
+    if (!count) return mount(selectionBar);
+
+    const allSelected = documents.length > 0 && count === documents.length;
+    mount(selectionBar,
+      h('span.sel-count', `${count} selected`),
+      h('button.btn.btn-sm.btn-ghost', {
+        onclick: () => {
+          if (allSelected) return clearSelection();
+          for (const doc of documents) selection.add(doc.id);
+          paintSelection();
+        },
+      }, allSelected ? 'Select none' : `Select all ${documents.length}`),
+      h('span.spacer'),
+      h('a.btn.btn-sm', {
+        href: `/api/docs/${[...selection][0]}/download`,
+        class: count === 1 ? '' : 'hidden',
+        title: 'Download this file',
+      }, icon('download', { size: 15 }), h('span.btn-label', 'Download')),
+      h('button.btn.btn-sm.btn-danger', { onclick: deleteSelected },
+        icon('trash', { size: 15 }), h('span.btn-label', `Delete ${count}`)),
+      h('button.btn.btn-sm.btn-icon', { title: 'Clear selection', onclick: clearSelection },
+        icon('x', { size: 15 }))
+    );
+  }
+
+  async function deleteSelected() {
+    const ids = [...selection];
+    if (!ids.length) return;
+
+    const ok = await confirmDialog({
+      title: ids.length === 1 ? 'Delete this document?' : `Delete ${ids.length} documents?`,
+      message: ids.length === 1
+        ? 'The file and everything read from it will be removed from the server.'
+        : `${ids.length} files and everything read from them will be removed from the server. This cannot be undone.`,
+      confirmLabel: ids.length === 1 ? 'Delete' : `Delete ${ids.length}`,
+    });
+    if (!ok) return;
+
+    try {
+      const result = await api('/api/docs/bulk-delete', { method: 'POST', body: { ids } });
+      clearSelection();
+      await refresh();
+      toast(`${result.deleted} document${result.deleted === 1 ? '' : 's'} deleted`);
+    } catch (err) {
+      toast(err.message || 'Could not delete those', 'error');
+    }
+  }
+
+  /** The checkbox that sits on every card and row. */
+  function selectBox(doc) {
+    return h('span.select-box', {
+      role: 'checkbox',
+      tabindex: '0',
+      'aria-checked': String(selection.has(doc.id)),
+      'aria-label': `Select ${doc.title || doc.filename}`,
+      title: 'Select',
+      onclick: (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        toggleSelect(doc.id, event.shiftKey);
+      },
+      onkeydown: (event) => {
+        if (event.key !== ' ' && event.key !== 'Enter') return;
+        event.stopPropagation();
+        event.preventDefault();
+        toggleSelect(doc.id, event.shiftKey);
+      },
+    }, icon('check', { size: 13, stroke: 2.6 }));
+  }
+
+  /** Once anything is selected, a plain click picks instead of opening. */
+  function openOrSelect(event, doc) {
+    if (selection.size > 0 || event.metaKey || event.ctrlKey || event.shiftKey) {
+      event.preventDefault();
+      return toggleSelect(doc.id, event.shiftKey);
+    }
+    navigate(`/docs/${doc.id}`);
+  }
+
   function docCard(doc) {
-    return h('button.card.doc-card', { onclick: () => navigate(`/docs/${doc.id}`) },
+    return h('button.card.doc-card', {
+      dataset: { id: doc.id },
+      class: selection.has(doc.id) ? 'selected' : '',
+      onclick: (event) => openOrSelect(event, doc),
+    },
       h('div.doc-thumb',
         thumbFor(doc, 26),
+        selectBox(doc),
         doc.kind !== 'document' ? h('span.badge', doc.kind) : null,
         doc.amount ? h('span.amount', formatMoney(doc.amount, doc.currency)) : null),
       h('div.doc-body',
@@ -240,7 +388,12 @@ export default async function render(root, ctx) {
   }
 
   function docRow(doc) {
-    return h('div.doc-row', { onclick: () => navigate(`/docs/${doc.id}`) },
+    return h('div.doc-row', {
+      dataset: { id: doc.id },
+      class: selection.has(doc.id) ? 'selected' : '',
+      onclick: (event) => openOrSelect(event, doc),
+    },
+      selectBox(doc),
       h('span.mini', thumbFor(doc, 16)),
       h('span.rmeta',
         h('strong.truncate', doc.title || doc.filename),
@@ -260,7 +413,7 @@ export default async function render(root, ctx) {
     // would repaint every glass card (and anything blurring them) for nothing.
     const signature = documents
       .map((doc) => `${doc.id}:${doc.ocr_status}:${doc.updated_at}:${doc.amount}`)
-      .join('|') + `#${view}`;
+      .join('|') + `#${view}#${[...selection].sort().join(',')}`;
     if (signature === lastSignature && resultsHost.firstChild) return;
     lastSignature = signature;
 
@@ -280,6 +433,8 @@ export default async function render(root, ctx) {
     mount(resultsHost, view === 'grid'
       ? h('div.doc-grid', ...documents.map(docCard))
       : h('div.doc-rows', ...documents.map(docRow)));
+    resultsHost.classList.toggle('selecting', selection.size > 0);
+    drawSelectionBar();
   }
 
   /* --------------------------------------------------------- drawer */
@@ -582,6 +737,7 @@ export default async function render(root, ctx) {
     dropzone,
     uploadHost,
     toolbar,
+    selectionBar,
     h('div.docs-layout', filterRail, resultsHost)
   ));
 
@@ -605,5 +761,6 @@ export default async function render(root, ctx) {
     stopPolling();
     closeDrawer({ back: false });
     window.removeEventListener('workbench:files', onGlobalFiles);
+    window.removeEventListener('keydown', onKeyDown);
   };
 }
