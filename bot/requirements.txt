@@ -1,0 +1,9 @@
+# Everything the pilot needs beyond the standard library.
+# tkinter ships with Python on Windows and macOS; on Linux: apt install python3-tk
+
+mss>=9.0.1            # screen capture
+numpy>=1.24           # frame maths
+opencv-python>=4.9    # finding the ball
+
+# Only needed away from Windows, where input goes through ctypes instead.
+pynput>=1.7.6 ; sys_platform != 'win32'
