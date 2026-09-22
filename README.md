@@ -306,3 +306,24 @@ sidebar shows OCR status at a glance.
   under random names outside the web root.
 - Your data lives in one directory. Copy `data/` and you have copied
   everything.
+
+---
+
+## Also in this repository: Roblox Pilot
+
+`bot/` holds a separate desktop app — not part of the web toolkit and not
+served by it. It watches the screen and plays a Roblox game with the keyboard
+and mouse. The first role written is a goalkeeper for *[RANKED!] Illegal
+Soccer*.
+
+```bash
+cd bot
+pip install -r requirements.txt
+python run.py --check     # what is installed, what is missing
+python run.py             # open the launcher
+```
+
+It needs Python 3.10+ and a real display, so it runs on the machine playing the
+game rather than on the server. See [bot/README.md](bot/README.md) for the
+controls, calibration and how the keeper decides. Note that automating a ranked
+game is against the Roblox Terms of Service.
